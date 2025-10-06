@@ -60,10 +60,39 @@
             gap: 1rem;
             box-shadow: 0 20px 60px rgba(15, 23, 42, 0.45);
         }
+        .panel-heading {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+        }
         h2 {
             margin: 0;
             font-size: 1.2rem;
             letter-spacing: 0.02em;
+        }
+        h3.section-title {
+            margin: 0;
+            font-size: 1rem;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.2rem 0.6rem;
+            border-radius: 999px;
+            background: rgba(56, 189, 248, 0.15);
+            color: var(--accent);
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+        .muted {
+            color: var(--muted);
         }
         .levels {
             display: flex;
@@ -81,6 +110,12 @@
             cursor: pointer;
             transition: transform 0.15s ease, border 0.2s ease;
         }
+        .level .level-meta {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 0.25rem;
+        }
         .level:hover {
             transform: translateY(-2px);
             border-color: rgba(148, 163, 184, 0.4);
@@ -88,6 +123,10 @@
         .level.active {
             border-color: var(--accent);
             box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.35);
+        }
+        .badge.badge-small {
+            font-size: 0.65rem;
+            padding: 0.15rem 0.45rem;
         }
         .tasks {
             display: flex;
@@ -100,6 +139,23 @@
             border-radius: 12px;
             padding: 0.9rem 1rem;
             position: relative;
+            text-align: left;
+            cursor: pointer;
+            color: inherit;
+            font: inherit;
+            display: flex;
+            flex-direction: column;
+            gap: 0.45rem;
+            transition: transform 0.15s ease, border 0.2s ease, box-shadow 0.2s ease;
+        }
+        .task:hover {
+            transform: translateY(-2px);
+            border-color: rgba(148, 163, 184, 0.35);
+            box-shadow: 0 12px 24px rgba(8, 47, 73, 0.25);
+        }
+        .task:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
         }
         .task.completed {
             border-color: rgba(56, 189, 248, 0.5);
@@ -111,6 +167,10 @@
             right: 0.9rem;
             color: var(--accent);
         }
+        .task.active {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.35);
+        }
         .task strong {
             display: block;
             margin-bottom: 0.35rem;
@@ -119,6 +179,16 @@
         .task span {
             font-size: 0.85rem;
             color: var(--muted);
+        }
+        .task .task-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+            color: rgba(148, 163, 184, 0.75);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
         }
         .terminal {
             flex: 1;
@@ -206,6 +276,65 @@
             width: 0;
             transition: width 0.3s ease;
         }
+        .mission-description {
+            color: var(--muted);
+            line-height: 1.6;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            padding: 1rem;
+            border-radius: 12px;
+            font-size: 0.95rem;
+        }
+        .mission-description p {
+            margin: 0 0 0.75rem;
+        }
+        .mission-description p:last-child {
+            margin-bottom: 0;
+        }
+        .chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .chip {
+            background: rgba(56, 189, 248, 0.15);
+            color: var(--accent);
+            border-radius: 999px;
+            padding: 0.35rem 0.75rem;
+            font-size: 0.75rem;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+        .objectives {
+            margin: 0;
+            padding-left: 1.1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+            color: var(--muted);
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+        .resources {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .resources a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+        .resources a:hover {
+            text-decoration: underline;
+        }
+        .resources span {
+            color: var(--muted);
+            font-size: 0.8rem;
+            margin-left: 0.35rem;
+        }
         .log {
             font-size: 0.85rem;
             color: var(--muted);
@@ -226,6 +355,23 @@
             border-radius: 12px;
             padding: 1rem;
             color: #5eead4;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .ghost-button {
+            background: transparent;
+            border: 1px solid rgba(94, 234, 212, 0.6);
+            color: #5eead4;
+            padding: 0.6rem 1rem;
+            border-radius: 999px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.15s ease, border 0.2s ease;
+        }
+        .ghost-button:hover {
+            transform: translateY(-1px);
+            border-color: rgba(94, 234, 212, 0.9);
         }
         @media (max-width: 1100px) {
             main {
@@ -248,13 +394,19 @@
 </header>
 <main>
     <aside class="panel" id="levels-panel">
-        <h2>Уровни кампании</h2>
+        <div class="panel-heading">
+            <h2>Учебный план</h2>
+            <span id="difficulty-badge" class="badge"></span>
+        </div>
+        <p id="level-summary-text" class="muted"></p>
         <div class="levels" id="levels"></div>
+        <h3 class="section-title">Задания уровня</h3>
+        <div class="tasks" id="tasks"></div>
     </aside>
     <section class="panel terminal">
         <div>
             <h2 id="mission-title">Миссия</h2>
-            <p id="mission-description" style="color: var(--muted); margin: 0; line-height: 1.6;"></p>
+            <div id="mission-description" class="mission-description"></div>
         </div>
         <div class="terminal-screen" id="terminal-output" aria-live="polite"></div>
         <form class="terminal-input" id="terminal-form">
@@ -270,9 +422,24 @@
     </section>
     <aside class="panel status">
         <div class="progress">
+            <strong>Общий прогресс кампании</strong>
+            <div class="progress-bar"><span id="overall-progress-bar"></span></div>
+            <p id="overall-progress-text" class="muted"></p>
+        </div>
+        <div class="progress">
             <strong id="progress-label">Прогресс уровня</strong>
             <div class="progress-bar"><span id="progress-bar"></span></div>
-            <p id="progress-text" style="margin: 0.6rem 0 0; color: var(--muted);"></p>
+            <p id="progress-text" class="muted"></p>
+        </div>
+        <div class="overview" id="mission-overview">
+            <h2>Навыки уровня</h2>
+            <div class="chips" id="skills"></div>
+            <h2>Цели обучения</h2>
+            <ul id="objectives" class="objectives"></ul>
+        </div>
+        <div>
+            <h2>Материалы и ссылки</h2>
+            <ul class="resources" id="resources"></ul>
         </div>
         <div>
             <h2>Журнал</h2>
@@ -280,260 +447,11 @@
         </div>
         <div class="support">
             <strong>Совет</strong>
-            <p style="margin: 0.4rem 0 0; font-size: 0.85rem; line-height: 1.6;">Используйте тренажёр каждый день по 15 минут. Повторяйте команды из терминала на реальной машине, чтобы закрепить навыки.</p>
+            <p class="muted">Используйте тренажёр каждый день по 15 минут. Повторяйте команды из терминала на реальной машине, чтобы закрепить навыки.</p>
+            <button id="reset-btn" type="button" class="ghost-button">Сбросить прогресс</button>
         </div>
     </aside>
 </main>
-<script>
-const missions = [
-    {
-        id: 'novice',
-        title: 'Новичок',
-        summary: 'Освойте базовую навигацию и управление файлами.',
-        tasks: [
-            {
-                title: 'Найти путь',
-                description: 'Узнайте, в какой директории вы находитесь, чтобы не потеряться в системе.',
-                command: 'pwd',
-                response: '/home/cadet\n',
-                hint: 'Команда для отображения текущего рабочего каталога.',
-                success: 'Правильно! Вы теперь знаете, где находитесь.'
-            },
-            {
-                title: 'Список объектов',
-                description: 'Посмотрите, какие файлы и папки есть в вашей директории.',
-                command: 'ls',
-                response: 'Документы  Загрузки  миссия.txt  отчёт.log\n',
-                hint: 'Нужна команда, которая перечисляет содержимое каталога.',
-                success: 'Отлично! Вы видите доступные файлы.'
-            },
-            {
-                title: 'Прочесть заметку',
-                description: 'В файле миссия.txt спрятана подсказка. Выведите содержимое в терминал.',
-                command: 'cat миссия.txt',
-                response: 'Чтобы открыть портал, изучи конфигурацию сервиса.\n',
-                hint: 'Воспользуйтесь командой для печати содержимого файла.',
-                success: 'Получено сообщение. Пора двигаться дальше!'
-            }
-        ]
-    },
-    {
-        id: 'user',
-        title: 'Пользователь',
-        summary: 'Учитесь управлять процессами и пакетами.',
-        tasks: [
-            {
-                title: 'Проверить процессы',
-                description: 'Отобразите активные процессы, чтобы найти зависший сервис.',
-                command: 'top',
-                response: 'top - 18:21:07 up  5:42,  1 user,  load average: 0.08, 0.11, 0.09\n',
-                hint: 'Команда для мониторинга процессов в реальном времени.',
-                success: 'Мониторинг запущен. Теперь вы видите активные процессы.'
-            },
-            {
-                title: 'Установить пакет',
-                description: 'Ваша миссия — установить пакет htop для удобного мониторинга.',
-                command: 'sudo apt install htop',
-                response: 'Чтение списков пакетов... Готово\nПостроение дерева зависимостей... Готово\n',
-                hint: 'Не забудьте про повышенные права с sudo.',
-                success: 'Пакет установлен. Можно продолжать.'
-            }
-        ]
-    },
-    {
-        id: 'pro',
-        title: 'Профи',
-        summary: 'Автоматизация и безопасность инфраструктуры.',
-        tasks: [
-            {
-                title: 'Планировщик задач',
-                description: 'Добавьте задание в cron, чтобы выполнять бэкап каждые сутки в 02:00.',
-                command: "echo '0 2 * * * /usr/local/bin/backup.sh' >> /etc/crontab",
-                response: '',
-                hint: 'Используйте echo и перенаправление, не забудьте про файл /etc/crontab.',
-                success: 'Запись добавлена, резервное копирование автоматизировано.'
-            },
-            {
-                title: 'Защитить сервис',
-                description: 'Добавьте правило брандмауэра, разрешающее только ssh-соединения.',
-                command: 'sudo ufw allow ssh',
-                response: "Правило добавлено\nПравило добавлено (v6)\n",
-                hint: 'UFW — удобный интерфейс к iptables.',
-                success: 'SSH открыт, остальное заблокировано.'
-            }
-        ]
-    }
-];
-
-const state = {
-    levelIndex: 0,
-    taskIndex: 0,
-    attempts: 0,
-    log: []
-};
-
-const levelsContainer = document.getElementById('levels');
-const missionTitle = document.getElementById('mission-title');
-const missionDescription = document.getElementById('mission-description');
-const terminalOutput = document.getElementById('terminal-output');
-const terminalForm = document.getElementById('terminal-form');
-const commandInput = document.getElementById('command');
-const progressBar = document.getElementById('progress-bar');
-const progressText = document.getElementById('progress-text');
-const progressLabel = document.getElementById('progress-label');
-const logContainer = document.getElementById('log');
-const hintBtn = document.getElementById('hint-btn');
-const skipBtn = document.getElementById('skip-btn');
-const attemptsText = document.getElementById('attempts');
-
-function renderLevels() {
-    levelsContainer.innerHTML = '';
-    missions.forEach((mission, index) => {
-        const completedTasks = mission.tasks.filter(task => task.completed).length;
-        const totalTasks = mission.tasks.length;
-        const button = document.createElement('button');
-        button.className = 'level' + (index === state.levelIndex ? ' active' : '');
-        button.innerHTML = `
-            <span>
-                <strong>${mission.title}</strong><br>
-                <small style="color: var(--muted);">${mission.summary}</small>
-            </span>
-            <span style="color: var(--accent); font-weight: 600;">${completedTasks}/${totalTasks}</span>
-        `;
-        button.addEventListener('click', () => {
-            state.levelIndex = index;
-            state.taskIndex = mission.tasks.findIndex(task => !task.completed);
-            if (state.taskIndex === -1) state.taskIndex = mission.tasks.length - 1;
-            state.attempts = 0;
-            renderLevels();
-            renderTask();
-            log(`Переключение на уровень «${mission.title}».`);
-        });
-        levelsContainer.appendChild(button);
-    });
-}
-
-function renderTask() {
-    const mission = missions[state.levelIndex];
-    const task = mission.tasks[state.taskIndex];
-    missionTitle.textContent = `${mission.title}: ${task.title}`;
-    missionDescription.textContent = task.description;
-    terminalOutput.textContent = '';
-    commandInput.value = '';
-    commandInput.focus();
-    updateProgress();
-    updateAttempts();
-}
-
-function updateProgress() {
-    const mission = missions[state.levelIndex];
-    const completedTasks = mission.tasks.filter(task => task.completed).length;
-    const totalTasks = mission.tasks.length;
-    const progress = Math.round((completedTasks / totalTasks) * 100);
-    progressBar.style.width = `${progress}%`;
-    progressText.textContent = `Задания выполнены: ${completedTasks} из ${totalTasks} (${progress}%)`;
-    progressLabel.textContent = `Прогресс уровня «${mission.title}»`;
-    renderTasksList();
-}
-
-function renderTasksList() {
-    const mission = missions[state.levelIndex];
-    const tasksList = mission.tasks.map((task, index) => {
-        const classes = ['task'];
-        if (task.completed) classes.push('completed');
-        if (index === state.taskIndex) classes.push('active');
-        return `
-            <div class="task ${classes.join(' ')}">
-                <strong>${task.title}</strong>
-                <span>${task.description}</span>
-            </div>
-        `;
-    }).join('');
-    const existing = document.querySelector('.panel .tasks');
-    if (!existing) {
-        const tasksContainer = document.createElement('div');
-        tasksContainer.className = 'tasks';
-        tasksContainer.innerHTML = tasksList;
-        document.getElementById('levels-panel').appendChild(tasksContainer);
-    } else {
-        existing.innerHTML = tasksList;
-    }
-}
-
-function updateAttempts() {
-    if (state.attempts > 0) {
-        attemptsText.textContent = `Попыток: ${state.attempts}`;
-    } else {
-        attemptsText.textContent = '';
-    }
-}
-
-function log(message) {
-    const time = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-    state.log.push(`[${time}] ${message}`);
-    if (state.log.length > 12) state.log.shift();
-    logContainer.innerHTML = state.log.map(entry => `<div class="log-entry">${entry}</div>`).join('');
-    logContainer.scrollTop = logContainer.scrollHeight;
-}
-
-function appendTerminal(text, type = 'system') {
-    const prompt = type === 'input' ? 'user@linuxquest:~$ ' : '';
-    terminalOutput.textContent += `${prompt}${text}\n`;
-    terminalOutput.scrollTop = terminalOutput.scrollHeight;
-}
-
-terminalForm.addEventListener('submit', (event) => {
-    event.preventDefault();
-    const mission = missions[state.levelIndex];
-    const task = mission.tasks[state.taskIndex];
-    const value = commandInput.value.trim();
-    if (!value) return;
-
-    appendTerminal(value, 'input');
-    state.attempts += 1;
-    updateAttempts();
-
-    if (value === task.command) {
-        appendTerminal(task.response + task.success);
-        task.completed = true;
-        log(`Задание «${task.title}» завершено.`);
-        state.attempts = 0;
-        const nextIndex = mission.tasks.findIndex(t => !t.completed);
-        if (nextIndex !== -1) {
-            state.taskIndex = nextIndex;
-            setTimeout(renderTask, 600);
-        } else {
-            appendTerminal(`Уровень «${mission.title}» завершён!`);
-        }
-        updateProgress();
-    } else {
-        appendTerminal(`Команда «${value}» не подходит. Попробуйте ещё раз.`);
-        log(`Ошибка команды для задания «${task.title}».`);
-    }
-
-    commandInput.value = '';
-    commandInput.focus();
-});
-
-hintBtn.addEventListener('click', () => {
-    const mission = missions[state.levelIndex];
-    const task = mission.tasks[state.taskIndex];
-    appendTerminal(`Подсказка: ${task.hint}`);
-    log(`Выдана подсказка для «${task.title}».`);
-});
-
-skipBtn.addEventListener('click', () => {
-    const mission = missions[state.levelIndex];
-    const nextIndex = (state.taskIndex + 1) % mission.tasks.length;
-    state.taskIndex = nextIndex;
-    state.attempts = 0;
-    renderTask();
-    log('Задание пропущено. Вы можете вернуться к нему позже.');
-});
-
-renderLevels();
-renderTask();
-log('Добро пожаловать в Linux Quest! Начните с текущего задания.');
-</script>
+<script src="app.js"></script>
 </body>
 </html>
