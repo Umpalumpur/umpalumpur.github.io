@@ -1,166 +1,539 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Lesson #2</title>
-    <link href="/css/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Linux Quest — тренажёр по Linux</title>
+    <style>
+        :root {
+            color-scheme: light dark;
+            font-family: "Inter", "Segoe UI", Roboto, sans-serif;
+            --bg: #0f172a;
+            --surface: rgba(30, 41, 59, 0.85);
+            --surface-soft: rgba(15, 23, 42, 0.75);
+            --border: rgba(148, 163, 184, 0.2);
+            --accent: #38bdf8;
+            --accent-strong: #0ea5e9;
+            --text: #e2e8f0;
+            --muted: #94a3b8;
+            background: var(--bg);
+            color: var(--text);
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: radial-gradient(circle at 20% 20%, rgba(56, 189, 248, 0.08), transparent 35%),
+                        radial-gradient(circle at 80% 0%, rgba(14, 165, 233, 0.12), transparent 40%),
+                        var(--bg);
+            display: flex;
+            flex-direction: column;
+        }
+        header {
+            padding: 2.5rem 1.5rem 1.25rem;
+            text-align: center;
+        }
+        header h1 {
+            margin: 0 0 0.6rem;
+            font-size: clamp(2rem, 3vw, 2.8rem);
+        }
+        header p {
+            margin: 0 auto;
+            max-width: 720px;
+            line-height: 1.7;
+            color: var(--muted);
+        }
+        main {
+            flex: 1;
+            display: grid;
+            gap: 1.5rem;
+            padding: 0 1.5rem 2rem;
+            grid-template-columns: minmax(260px, 320px) minmax(0, 1fr) minmax(240px, 300px);
+        }
+        .panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            box-shadow: 0 20px 60px rgba(15, 23, 42, 0.45);
+        }
+        h2 {
+            margin: 0;
+            font-size: 1.2rem;
+            letter-spacing: 0.02em;
+        }
+        .levels {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .level {
+            padding: 0.8rem 1rem;
+            background: var(--surface-soft);
+            border: 1px solid transparent;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: transform 0.15s ease, border 0.2s ease;
+        }
+        .level:hover {
+            transform: translateY(-2px);
+            border-color: rgba(148, 163, 184, 0.4);
+        }
+        .level.active {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.35);
+        }
+        .tasks {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .task {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(148, 163, 184, 0.15);
+            border-radius: 12px;
+            padding: 0.9rem 1rem;
+            position: relative;
+        }
+        .task.completed {
+            border-color: rgba(56, 189, 248, 0.5);
+        }
+        .task.completed::after {
+            content: "✔";
+            position: absolute;
+            top: 0.75rem;
+            right: 0.9rem;
+            color: var(--accent);
+        }
+        .task strong {
+            display: block;
+            margin-bottom: 0.35rem;
+            font-size: 0.95rem;
+        }
+        .task span {
+            font-size: 0.85rem;
+            color: var(--muted);
+        }
+        .terminal {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .terminal-screen {
+            flex: 1;
+            background: #050c1d;
+            border-radius: 14px;
+            padding: 1rem;
+            border: 1px solid rgba(15, 118, 220, 0.4);
+            font-family: "Fira Code", "JetBrains Mono", "SFMono-Regular", monospace;
+            font-size: 0.95rem;
+            color: #cbd5f5;
+            overflow-y: auto;
+            min-height: 240px;
+            line-height: 1.6;
+            box-shadow: inset 0 0 40px rgba(8, 145, 178, 0.08);
+        }
+        .terminal-input {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 12px;
+            padding: 0.75rem 1rem;
+            font-family: inherit;
+        }
+        .terminal-input label {
+            color: var(--accent);
+            font-family: "Fira Code", monospace;
+        }
+        .terminal-input input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text);
+            font-family: "Fira Code", monospace;
+            font-size: 1rem;
+            outline: none;
+        }
+        .terminal-input button {
+            background: var(--accent);
+            color: #041221;
+            border: none;
+            font-weight: 600;
+            padding: 0.65rem 1.2rem;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: transform 0.1s ease, background 0.2s ease;
+        }
+        .terminal-input button:hover {
+            transform: translateY(-1px);
+            background: var(--accent-strong);
+        }
+        .terminal-input button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .status {
+            display: grid;
+            gap: 1.2rem;
+        }
+        .progress {
+            background: rgba(15, 23, 42, 0.8);
+            border-radius: 12px;
+            border: 1px solid rgba(148, 163, 184, 0.15);
+            padding: 1rem;
+        }
+        .progress-bar {
+            height: 10px;
+            background: rgba(148, 163, 184, 0.2);
+            border-radius: 999px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+        .progress-bar span {
+            display: block;
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent) 0%, #22d3ee 100%);
+            width: 0;
+            transition: width 0.3s ease;
+        }
+        .log {
+            font-size: 0.85rem;
+            color: var(--muted);
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 12px;
+            padding: 1rem;
+            border: 1px solid rgba(148, 163, 184, 0.12);
+            max-height: 220px;
+            overflow-y: auto;
+        }
+        .log-entry {
+            margin-bottom: 0.75rem;
+        }
+        .log-entry:last-child { margin-bottom: 0; }
+        .support {
+            background: rgba(14, 116, 144, 0.2);
+            border: 1px dashed rgba(45, 212, 191, 0.5);
+            border-radius: 12px;
+            padding: 1rem;
+            color: #5eead4;
+        }
+        @media (max-width: 1100px) {
+            main {
+                grid-template-columns: minmax(0, 1fr);
+            }
+            .panel {
+                order: 0;
+            }
+            .terminal {
+                order: -1;
+            }
+        }
+    </style>
 </head>
-<body 
-bgcolor="#8FBC8F"> <!-- фоновый цвет-->
+<body>
+<header>
+    <h1>Linux Quest</h1>
+    <p>Интерактивный тренажёр по Linux для новичков и профи. Выполняйте реальные задачи в симулированном терминале, 
+        получайте мгновенную обратную связь и прокачивайте навыки администрирования прямо в браузере или на телефоне.</p>
+</header>
+<main>
+    <aside class="panel" id="levels-panel">
+        <h2>Уровни кампании</h2>
+        <div class="levels" id="levels"></div>
+    </aside>
+    <section class="panel terminal">
+        <div>
+            <h2 id="mission-title">Миссия</h2>
+            <p id="mission-description" style="color: var(--muted); margin: 0; line-height: 1.6;"></p>
+        </div>
+        <div class="terminal-screen" id="terminal-output" aria-live="polite"></div>
+        <form class="terminal-input" id="terminal-form">
+            <label for="command">user@linuxquest:~$</label>
+            <input id="command" type="text" autocomplete="off" placeholder="Введите команду" />
+            <button type="submit">Запустить</button>
+        </form>
+        <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+            <button type="button" id="hint-btn" style="background: transparent; border: 1px solid var(--accent); color: var(--accent); padding: 0.55rem 1.4rem; border-radius: 999px; cursor: pointer; font-weight: 600;">Подсказка</button>
+            <button type="button" id="skip-btn" style="background: rgba(56,189,248,0.1); border: 1px solid rgba(56,189,248,0.4); color: var(--accent); padding: 0.55rem 1.4rem; border-radius: 999px; cursor: pointer; font-weight: 600;">Пропустить</button>
+            <span id="attempts" style="align-self:center; color: var(--muted);"></span>
+        </div>
+    </section>
+    <aside class="panel status">
+        <div class="progress">
+            <strong id="progress-label">Прогресс уровня</strong>
+            <div class="progress-bar"><span id="progress-bar"></span></div>
+            <p id="progress-text" style="margin: 0.6rem 0 0; color: var(--muted);"></p>
+        </div>
+        <div>
+            <h2>Журнал</h2>
+            <div class="log" id="log"></div>
+        </div>
+        <div class="support">
+            <strong>Совет</strong>
+            <p style="margin: 0.4rem 0 0; font-size: 0.85rem; line-height: 1.6;">Используйте тренажёр каждый день по 15 минут. Повторяйте команды из терминала на реальной машине, чтобы закрепить навыки.</p>
+        </div>
+    </aside>
+</main>
+<script>
+const missions = [
+    {
+        id: 'novice',
+        title: 'Новичок',
+        summary: 'Освойте базовую навигацию и управление файлами.',
+        tasks: [
+            {
+                title: 'Найти путь',
+                description: 'Узнайте, в какой директории вы находитесь, чтобы не потеряться в системе.',
+                command: 'pwd',
+                response: '/home/cadet\n',
+                hint: 'Команда для отображения текущего рабочего каталога.',
+                success: 'Правильно! Вы теперь знаете, где находитесь.'
+            },
+            {
+                title: 'Список объектов',
+                description: 'Посмотрите, какие файлы и папки есть в вашей директории.',
+                command: 'ls',
+                response: 'Документы  Загрузки  миссия.txt  отчёт.log\n',
+                hint: 'Нужна команда, которая перечисляет содержимое каталога.',
+                success: 'Отлично! Вы видите доступные файлы.'
+            },
+            {
+                title: 'Прочесть заметку',
+                description: 'В файле миссия.txt спрятана подсказка. Выведите содержимое в терминал.',
+                command: 'cat миссия.txt',
+                response: 'Чтобы открыть портал, изучи конфигурацию сервиса.\n',
+                hint: 'Воспользуйтесь командой для печати содержимого файла.',
+                success: 'Получено сообщение. Пора двигаться дальше!'
+            }
+        ]
+    },
+    {
+        id: 'user',
+        title: 'Пользователь',
+        summary: 'Учитесь управлять процессами и пакетами.',
+        tasks: [
+            {
+                title: 'Проверить процессы',
+                description: 'Отобразите активные процессы, чтобы найти зависший сервис.',
+                command: 'top',
+                response: 'top - 18:21:07 up  5:42,  1 user,  load average: 0.08, 0.11, 0.09\n',
+                hint: 'Команда для мониторинга процессов в реальном времени.',
+                success: 'Мониторинг запущен. Теперь вы видите активные процессы.'
+            },
+            {
+                title: 'Установить пакет',
+                description: 'Ваша миссия — установить пакет htop для удобного мониторинга.',
+                command: 'sudo apt install htop',
+                response: 'Чтение списков пакетов... Готово\nПостроение дерева зависимостей... Готово\n',
+                hint: 'Не забудьте про повышенные права с sudo.',
+                success: 'Пакет установлен. Можно продолжать.'
+            }
+        ]
+    },
+    {
+        id: 'pro',
+        title: 'Профи',
+        summary: 'Автоматизация и безопасность инфраструктуры.',
+        tasks: [
+            {
+                title: 'Планировщик задач',
+                description: 'Добавьте задание в cron, чтобы выполнять бэкап каждые сутки в 02:00.',
+                command: "echo '0 2 * * * /usr/local/bin/backup.sh' >> /etc/crontab",
+                response: '',
+                hint: 'Используйте echo и перенаправление, не забудьте про файл /etc/crontab.',
+                success: 'Запись добавлена, резервное копирование автоматизировано.'
+            },
+            {
+                title: 'Защитить сервис',
+                description: 'Добавьте правило брандмауэра, разрешающее только ssh-соединения.',
+                command: 'sudo ufw allow ssh',
+                response: "Правило добавлено\nПравило добавлено (v6)\n",
+                hint: 'UFW — удобный интерфейс к iptables.',
+                success: 'SSH открыт, остальное заблокировано.'
+            }
+        ]
+    }
+];
 
-<table 
-border="3" 
-align="center" 
-style="width:80%" 
-rules="rows" > <!-- создание таблицы ,толщина границы , ореинтир к центру, ширина, убрать двойные линии-->
+const state = {
+    levelIndex: 0,
+    taskIndex: 0,
+    attempts: 0,
+    log: []
+};
 
-        <tr> <!--созданиее строки--> 
-            <td> <!--создание ячейки-->
-                <table 
-                border="1" 
-                bgcolor="#f2f2f2" 
-                cellpadding="10" 
-                style="width:100%; 
-                border-radius: 6px;" 
-                background=""> <!-- таблица внутри таблицы, таким образом можно избегать "съезда в сторонку"-->
-                    <tr>
-                        <th> <!--создания одной ячейки таблицы-->
-                            <h1>What is Lorem Ipsum?</h1>
-                            <h3> </h3>
-                        </th>
-                    </tr>
-                </table>
-            </td>
-        </tr>
-     <table 
-     border="1" 
-     align="center"
-      bgcolor="#f2f2f2" 
-      cellpadding="15px" 
-      style="width:80%; 
-      border-radius: 5px;">
-        <tr>
-            <td 
-            style="border: 2px;" 
-            rowspan="2" 
-            style="width:80%">
-                <h3> 
-                    <p 
-                    style=
-                    "text-indent:20px"> 
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
-                    Vestibulum consectetur tincidunt ex a placerat. Aenean vel venenatis nibh. 
-                    Aliquam non mi augue. Etiam vitae nisi ac felis pharetra pulvinar non et metus.
-                     Donec mauris nulla, sollicitudin nec odio ut, tincidunt lobortis sapien.</p> 
-                     <p>Pellentesque auctor dui ut odio dapibus, nec molestie nulla tincidunt.
-                          Fusce dapibus felis vitae elit venenatis, non tempor leo condimentum. 
-                          Integer pharetra elit at magna porta, ut dapibus leo gravida.
-                           Phasellus quis augue ut ligula efficitur pellentesque et vitae turpis. 
-                         Vestibulum finibus nulla sit amet nisi gravida, tincidunt hendrerit orci tristique.</p>
-                
-                    <p 
-                    style=
-                    "text-indent:20px"> 
-                        <bold>
-                    Fusce suscipit odio ut bibendum elementum. 
-                    Vivamus rutrum ornare lacus, sit amet condimentum sem viverra a. 
-                    Integer in purus sed erat venenatis dapibus a vel neque.</bold></p> 
-                    <p>Proin viverra nisl quis erat ultrices, vel semper diam tristique. 
-                        Proin id ultrices orci. 
-                        Vestibulum pretium tristique nibh, nec mattis magna gravida a. 
-                        Morbi nec tincidunt ligula.
-                    </p>
-                    <p style=
-                    "text-indent:20px">
-                    <cite><span 
-                        style=
-                        "color: darkblue;">
-                        Fusce nec consequat metus. Nam fermentum non ipsum vitae tempor. 
-                        Nunc posuere ultricies lectus nec mattis. 
-                        Donec vel tortor mattis, tincidunt risus ut, maximus arcu.    
-                         </p></span></cite>
-                    <p> <cite><span 
-                        style=
-                        "color: darkblue;">
-                        Maecenas finibus mi at nisl eleifend, et fringilla sem eleifend. 
-                        Pellentesque aliquet, metus et pretium laoreet, sapien tortor varius est, 
-                        sit amet sollicitudin nulla ligula nec lectus.
-                         Aliquam pulvinar augue a mi aliquam, nec facilisis tellus auctor.
-                </span></cite>
-                    </p>
-                </h3>
-            </td>
-        </tr>
-        <tr>
-             <td 
-             bgcolor=
-             "#e6e6fa">
-                 <h2> Lorem Ipsum </h2>
-                        <p>
-                       <span 
-                        style="margin-left:5px;"> 
-                        "Neque porro quisquam est qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit..."
-                        
-                        </span>
-                     </p>
-                     <p>
-                        "There is no one who loves pain itself, who seeks after it and wants to have it, simply because it is pain..."
+const levelsContainer = document.getElementById('levels');
+const missionTitle = document.getElementById('mission-title');
+const missionDescription = document.getElementById('mission-description');
+const terminalOutput = document.getElementById('terminal-output');
+const terminalForm = document.getElementById('terminal-form');
+const commandInput = document.getElementById('command');
+const progressBar = document.getElementById('progress-bar');
+const progressText = document.getElementById('progress-text');
+const progressLabel = document.getElementById('progress-label');
+const logContainer = document.getElementById('log');
+const hintBtn = document.getElementById('hint-btn');
+const skipBtn = document.getElementById('skip-btn');
+const attemptsText = document.getElementById('attempts');
 
-                     </p>
-            </td>
-        </tr>
-            <tr>
-                <td
-                align="center"
-                style="border: 2px;" 
-                rowspan="2" 
-                style="width:80%">
-                    <h3>
-                         <p>
-                                Nunc interdum neque augue, in feugiat est dapibus sed. 
-                                Phasellus auctor elit erat, eu dictum ligula consectetur non. 
-                                Nulla velit odio, gravida sit amet ullamcorper eget, convallis eu neque. Nam et blandit arcu,     
-                          </p>
-                    </h3>
-                </td>
-            </tr>
+function renderLevels() {
+    levelsContainer.innerHTML = '';
+    missions.forEach((mission, index) => {
+        const completedTasks = mission.tasks.filter(task => task.completed).length;
+        const totalTasks = mission.tasks.length;
+        const button = document.createElement('button');
+        button.className = 'level' + (index === state.levelIndex ? ' active' : '');
+        button.innerHTML = `
+            <span>
+                <strong>${mission.title}</strong><br>
+                <small style="color: var(--muted);">${mission.summary}</small>
+            </span>
+            <span style="color: var(--accent); font-weight: 600;">${completedTasks}/${totalTasks}</span>
+        `;
+        button.addEventListener('click', () => {
+            state.levelIndex = index;
+            state.taskIndex = mission.tasks.findIndex(task => !task.completed);
+            if (state.taskIndex === -1) state.taskIndex = mission.tasks.length - 1;
+            state.attempts = 0;
+            renderLevels();
+            renderTask();
+            log(`Переключение на уровень «${mission.title}».`);
+        });
+        levelsContainer.appendChild(button);
+    });
+}
 
-        <tr>
-            <td
-            bgcolor="e6e6fa">
-                <h3>
-                        <a href="./page3.html" target="_blank" >page #2</a>
-                       <p> <a href="./page3.html" target="_blank" >page #3</a></p>
-                        <p><a href="./page4.html" target="_blank" >page #4</a></p>
-                        <p><a href="./page5.html" target="_blank" >page #5</a></p>
-                </h3>
-                
-            </td>
-        </tr>
-        
-     </table>
-    <table 
-    border="0" 
-    bgcolor="f2f2f2" 
-    height="50" 
-    cellpadding="10" 
-    align="center" 
-    style="width: 80%; 
-    border-radius: 6px;"> 
-        <tr>
-            <th>
-                <h3>
-                    <th>
-                        <a href="https://www.google.ru/" target="_blank" >Google</a></th>
-                        <th><a href="https://yandex.kz/" target="_blank" >Yandex</a></th>
-                            <th><a href="https://vk.com/" target="_blank" >VK</a></th>
-                                <th><a href="./second part/index.html" target="_blank" >Next lecture</a></th>
-                </h3>
-            </th>
-        </tr>
-    </table>
-</table>
+function renderTask() {
+    const mission = missions[state.levelIndex];
+    const task = mission.tasks[state.taskIndex];
+    missionTitle.textContent = `${mission.title}: ${task.title}`;
+    missionDescription.textContent = task.description;
+    terminalOutput.textContent = '';
+    commandInput.value = '';
+    commandInput.focus();
+    updateProgress();
+    updateAttempts();
+}
 
+function updateProgress() {
+    const mission = missions[state.levelIndex];
+    const completedTasks = mission.tasks.filter(task => task.completed).length;
+    const totalTasks = mission.tasks.length;
+    const progress = Math.round((completedTasks / totalTasks) * 100);
+    progressBar.style.width = `${progress}%`;
+    progressText.textContent = `Задания выполнены: ${completedTasks} из ${totalTasks} (${progress}%)`;
+    progressLabel.textContent = `Прогресс уровня «${mission.title}»`;
+    renderTasksList();
+}
+
+function renderTasksList() {
+    const mission = missions[state.levelIndex];
+    const tasksList = mission.tasks.map((task, index) => {
+        const classes = ['task'];
+        if (task.completed) classes.push('completed');
+        if (index === state.taskIndex) classes.push('active');
+        return `
+            <div class="task ${classes.join(' ')}">
+                <strong>${task.title}</strong>
+                <span>${task.description}</span>
+            </div>
+        `;
+    }).join('');
+    const existing = document.querySelector('.panel .tasks');
+    if (!existing) {
+        const tasksContainer = document.createElement('div');
+        tasksContainer.className = 'tasks';
+        tasksContainer.innerHTML = tasksList;
+        document.getElementById('levels-panel').appendChild(tasksContainer);
+    } else {
+        existing.innerHTML = tasksList;
+    }
+}
+
+function updateAttempts() {
+    if (state.attempts > 0) {
+        attemptsText.textContent = `Попыток: ${state.attempts}`;
+    } else {
+        attemptsText.textContent = '';
+    }
+}
+
+function log(message) {
+    const time = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    state.log.push(`[${time}] ${message}`);
+    if (state.log.length > 12) state.log.shift();
+    logContainer.innerHTML = state.log.map(entry => `<div class="log-entry">${entry}</div>`).join('');
+    logContainer.scrollTop = logContainer.scrollHeight;
+}
+
+function appendTerminal(text, type = 'system') {
+    const prompt = type === 'input' ? 'user@linuxquest:~$ ' : '';
+    terminalOutput.textContent += `${prompt}${text}\n`;
+    terminalOutput.scrollTop = terminalOutput.scrollHeight;
+}
+
+terminalForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const mission = missions[state.levelIndex];
+    const task = mission.tasks[state.taskIndex];
+    const value = commandInput.value.trim();
+    if (!value) return;
+
+    appendTerminal(value, 'input');
+    state.attempts += 1;
+    updateAttempts();
+
+    if (value === task.command) {
+        appendTerminal(task.response + task.success);
+        task.completed = true;
+        log(`Задание «${task.title}» завершено.`);
+        state.attempts = 0;
+        const nextIndex = mission.tasks.findIndex(t => !t.completed);
+        if (nextIndex !== -1) {
+            state.taskIndex = nextIndex;
+            setTimeout(renderTask, 600);
+        } else {
+            appendTerminal(`Уровень «${mission.title}» завершён!`);
+        }
+        updateProgress();
+    } else {
+        appendTerminal(`Команда «${value}» не подходит. Попробуйте ещё раз.`);
+        log(`Ошибка команды для задания «${task.title}».`);
+    }
+
+    commandInput.value = '';
+    commandInput.focus();
+});
+
+hintBtn.addEventListener('click', () => {
+    const mission = missions[state.levelIndex];
+    const task = mission.tasks[state.taskIndex];
+    appendTerminal(`Подсказка: ${task.hint}`);
+    log(`Выдана подсказка для «${task.title}».`);
+});
+
+skipBtn.addEventListener('click', () => {
+    const mission = missions[state.levelIndex];
+    const nextIndex = (state.taskIndex + 1) % mission.tasks.length;
+    state.taskIndex = nextIndex;
+    state.attempts = 0;
+    renderTask();
+    log('Задание пропущено. Вы можете вернуться к нему позже.');
+});
+
+renderLevels();
+renderTask();
+log('Добро пожаловать в Linux Quest! Начните с текущего задания.');
+</script>
 </body>
 </html>
