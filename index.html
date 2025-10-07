@@ -37,6 +37,12 @@
     <section class="panel terminal" id="terminal-panel">
         <div>
             <h2 id="mission-title">Миссия</h2>
+            <div class="mobile-selectors" id="mobile-selectors">
+                <label class="mobile-selectors__label" for="mobile-level-select">Глава</label>
+                <select id="mobile-level-select" class="mobile-selectors__control" aria-label="Выбор главы"></select>
+                <label class="mobile-selectors__label" for="mobile-task-select">Задание</label>
+                <select id="mobile-task-select" class="mobile-selectors__control" aria-label="Выбор задания"></select>
+            </div>
             <div id="mission-description" class="mission-description"></div>
         </div>
         <div class="terminal-screen" id="terminal-output" aria-live="polite"></div>

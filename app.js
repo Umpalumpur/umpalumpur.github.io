@@ -45,6 +45,8 @@ const storyChapterText = document.getElementById('story-chapter-text');
 const storyBeatText = document.getElementById('story-beat-text');
 const rewardList = document.getElementById('reward-list');
 const npcStatus = document.getElementById('npc-status');
+const mobileLevelSelect = document.getElementById('mobile-level-select');
+const mobileTaskSelect = document.getElementById('mobile-task-select');
 const panelsMap = {
     'levels-panel': document.getElementById('levels-panel'),
     'terminal-panel': document.getElementById('terminal-panel'),
@@ -364,6 +366,15 @@ function ensureActiveTask() {
     state.taskIndex = nextIndex === -1 ? mission.tasks.length - 1 : nextIndex;
 }
 
+function escapeHtml(value = '') {
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 function buildTaskDescription(task) {
     const parts = [];
     if (task.description) {
@@ -410,6 +421,7 @@ function renderLevels() {
         });
         levelsContainer.appendChild(button);
     });
+    renderMobileSelectors();
 }
 
 function renderTask() {
@@ -427,13 +439,16 @@ function renderTask() {
     terminalOutput.textContent = '';
     commandInput.value = '';
     ensureTerminalPanel({ scroll: false, instant: true });
-    commandInput.focus();
+    if (!isCompactLayout()) {
+        commandInput.focus();
+    }
     scrollCommandInputIntoView();
     updateMissionMeta();
     updateStoryPanel();
     updateRewardsPanel();
     updateNpcPanel();
     renderTasksList();
+    renderMobileSelectors();
     updateMissionProgress();
     updateOverallProgress();
     updateAttempts();
@@ -476,6 +491,41 @@ function renderTasksList() {
             </button>
         `;
     }).join('');
+}
+
+function renderMobileSelectors() {
+    if (!mobileLevelSelect || !mobileTaskSelect) return;
+    const levelOptions = missions.map((mission, index) => {
+        const completedTasks = mission.tasks.filter(task => task.completed).length;
+        const totalTasks = mission.tasks.length;
+        const labelSuffix = totalTasks > 0 ? ` (${completedTasks}/${totalTasks})` : '';
+        const label = `${mission.title}${labelSuffix}`;
+        const selected = index === state.levelIndex ? ' selected' : '';
+        return `<option value="${index}"${selected}>${escapeHtml(label)}</option>`;
+    });
+    if (levelOptions.length === 0) {
+        mobileLevelSelect.innerHTML = '<option value="">Нет глав</option>';
+        mobileLevelSelect.disabled = true;
+    } else {
+        mobileLevelSelect.innerHTML = levelOptions.join('');
+        mobileLevelSelect.disabled = false;
+    }
+
+    const mission = missions[state.levelIndex];
+    if (!mission || mission.tasks.length === 0) {
+        mobileTaskSelect.innerHTML = '<option value="">Нет заданий</option>';
+        mobileTaskSelect.disabled = true;
+        return;
+    }
+
+    const taskOptions = mission.tasks.map((task, index) => {
+        const prefix = `${index + 1}. ${task.title}`;
+        const suffix = task.completed ? ' ✓' : '';
+        const selected = index === state.taskIndex ? ' selected' : '';
+        return `<option value="${index}"${selected}>${escapeHtml(prefix + suffix)}</option>`;
+    });
+    mobileTaskSelect.innerHTML = taskOptions.join('');
+    mobileTaskSelect.disabled = false;
 }
 
 function updateMissionProgress() {
@@ -743,6 +793,43 @@ if (tasksContainer) {
         renderTask();
         log(`Открыто задание «${missions[state.levelIndex].tasks[index].title}».`);
         ensureTerminalPanel({ scroll: true });
+    });
+}
+
+if (mobileLevelSelect) {
+    mobileLevelSelect.addEventListener('change', (event) => {
+        const { value } = event.target;
+        if (value === '') {
+            return;
+        }
+        const nextLevel = Number(value);
+        if (Number.isNaN(nextLevel) || !missions[nextLevel]) {
+            return;
+        }
+        state.levelIndex = nextLevel;
+        ensureActiveTask();
+        state.attempts = 0;
+        renderLevels();
+        renderTask();
+        log(`Переключение на уровень «${missions[state.levelIndex].title}» (мобильный выбор).`);
+        persistState();
+    });
+}
+
+if (mobileTaskSelect) {
+    mobileTaskSelect.addEventListener('change', (event) => {
+        const { value } = event.target;
+        if (value === '') {
+            return;
+        }
+        const nextTask = Number(value);
+        if (Number.isNaN(nextTask)) {
+            return;
+        }
+        state.taskIndex = nextTask;
+        state.attempts = 0;
+        renderTask();
+        log(`Открыто задание «${missions[state.levelIndex].tasks[nextTask].title}» (мобильный выбор).`);
     });
 }
 
