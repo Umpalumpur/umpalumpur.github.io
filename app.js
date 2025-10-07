@@ -10,7 +10,10 @@ const state = {
     levelIndex: 0,
     taskIndex: 0,
     attempts: 0,
-    log: []
+    log: [],
+    unlockedChapters: new Set(),
+    unlockedRewards: new Set(),
+    npcStates: {}
 };
 
 const levelsContainer = document.getElementById('levels');
@@ -37,6 +40,11 @@ const overallProgressText = document.getElementById('overall-progress-text');
 const resetBtn = document.getElementById('reset-btn');
 const promptLabel = document.getElementById('prompt-label');
 const mobileTabs = Array.from(document.querySelectorAll('.mobile-tab'));
+const storyChapterTitle = document.getElementById('story-chapter-title');
+const storyChapterText = document.getElementById('story-chapter-text');
+const storyBeatText = document.getElementById('story-beat-text');
+const rewardList = document.getElementById('reward-list');
+const npcStatus = document.getElementById('npc-status');
 const panelsMap = {
     'levels-panel': document.getElementById('levels-panel'),
     'terminal-panel': document.getElementById('terminal-panel'),
@@ -261,6 +269,26 @@ function loadProgress() {
                 state.taskIndex = Math.min(Math.max(data.taskIndex, 0), mission.tasks.length - 1);
             }
         }
+        if (Array.isArray(data?.story)) {
+            state.unlockedChapters = new Set(data.story);
+        }
+        if (Array.isArray(data?.rewards)) {
+            state.unlockedRewards = new Set(data.rewards);
+        }
+        if (data?.npcStates && typeof data.npcStates === 'object') {
+            state.npcStates = { ...data.npcStates };
+        }
+        missions.forEach(mission => {
+            const complete = mission.tasks.every(task => task.completed);
+            if (complete) {
+                if (mission.story) {
+                    state.unlockedChapters.add(mission.id);
+                }
+                if (mission.reward) {
+                    state.unlockedRewards.add(mission.reward.id);
+                }
+            }
+        });
     } catch (error) {
         console.warn('Не удалось загрузить прогресс', error);
     }
@@ -275,7 +303,10 @@ function saveProgress() {
         const payload = {
             completed,
             levelIndex: state.levelIndex,
-            taskIndex: state.taskIndex
+            taskIndex: state.taskIndex,
+            story: Array.from(state.unlockedChapters),
+            rewards: Array.from(state.unlockedRewards),
+            npcStates: state.npcStates
         };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
     } catch (error) {
@@ -297,6 +328,9 @@ function resetProgress() {
     state.taskIndex = 0;
     state.attempts = 0;
     state.log = [];
+    state.unlockedChapters = new Set();
+    state.unlockedRewards = new Set();
+    state.npcStates = {};
     terminalOutput.textContent = '';
     logContainer.innerHTML = '';
     if (sandbox && typeof sandbox.resetAll === 'function') {
@@ -311,6 +345,9 @@ function resetProgress() {
     renderLevels();
     renderTask();
     updateOverallProgress();
+    updateRewardsPanel();
+    updateStoryPanel();
+    updateNpcPanel();
     log('Прогресс сброшен. Начинаем заново!');
 }
 
@@ -337,6 +374,9 @@ function buildTaskDescription(task) {
     }
     if (task.context) {
         parts.push(`<p class="muted">${task.context}</p>`);
+    }
+    if (task.storyBeat) {
+        parts.push(`<p class="muted">${task.storyBeat}</p>`);
     }
     return parts.join('');
 }
@@ -390,6 +430,9 @@ function renderTask() {
     commandInput.focus();
     scrollCommandInputIntoView();
     updateMissionMeta();
+    updateStoryPanel();
+    updateRewardsPanel();
+    updateNpcPanel();
     renderTasksList();
     updateMissionProgress();
     updateOverallProgress();
@@ -454,6 +497,101 @@ function updateOverallProgress() {
     overallProgressText.textContent = `Выполнено ${completed} из ${totalTasks} заданий (${progress}%)`;
 }
 
+function updateStoryPanel() {
+    if (!storyChapterTitle || !storyChapterText || !storyBeatText) return;
+    const mission = missions[state.levelIndex];
+    if (!mission || !mission.story) {
+        storyChapterTitle.textContent = 'История кампании';
+        storyChapterText.textContent = 'Следуйте заданиям, чтобы открыть главы сюжета и получить награды наставников.';
+        storyBeatText.textContent = '';
+        return;
+    }
+    const story = mission.story;
+    storyChapterTitle.textContent = story.chapter;
+    const completed = mission.tasks.every(task => task.completed);
+    const unlocked = completed || state.unlockedChapters.has(mission.id);
+    storyChapterText.textContent = unlocked ? (story.outro || story.intro) : story.intro;
+    const task = mission.tasks[state.taskIndex];
+    storyBeatText.textContent = task?.storyBeat || '';
+}
+
+function updateRewardsPanel() {
+    if (!rewardList) return;
+    const entries = missions
+        .filter(mission => mission.reward)
+        .map(mission => {
+            const unlocked = state.unlockedRewards.has(mission.reward.id);
+            const classes = ['reward'];
+            if (unlocked) classes.push('reward--earned');
+            const description = unlocked
+                ? mission.reward.description
+                : (mission.reward.hint || 'Пройдите главу, чтобы открыть награду.');
+            return `
+                <li class="${classes.join(' ')}">
+                    <strong>${mission.reward.title}</strong>
+                    <small>${description}</small>
+                </li>
+            `;
+        });
+    if (entries.length === 0) {
+        rewardList.innerHTML = '<li class="reward"><small>Награды появятся после первых миссий.</small></li>';
+    } else {
+        rewardList.innerHTML = entries.join('');
+    }
+}
+
+function updateNpcPanel() {
+    if (!npcStatus) return;
+    const mission = missions[state.levelIndex];
+    const lines = [];
+    if (mission?.npc) {
+        const record = state.npcStates[mission.npc.id];
+        if (record) {
+            lines.push(`${mission.npc.name}: ${record.status}`);
+            if (record.description) {
+                lines.push(record.description);
+            }
+        } else {
+            lines.push(`${mission.npc.name}: ${mission.npc.intro}`);
+        }
+    }
+    Object.values(state.npcStates).forEach(entry => {
+        if (mission?.npc && entry.id === mission.npc.id) return;
+        lines.push(`${entry.name}: ${entry.status}`);
+        if (entry.description) {
+            lines.push(entry.description);
+        }
+    });
+    if (lines.length === 0) {
+        lines.push('Сеть спокойна. Выполняйте задания, чтобы встретить союзников и противников.');
+    }
+    npcStatus.textContent = lines.join('\n');
+}
+
+function handleSandboxEvent(event) {
+    if (!event) return;
+    const events = Array.isArray(event) ? event : [event];
+    let changed = false;
+    events.forEach(item => {
+        if (item.type === 'npc' && item.id) {
+            state.npcStates[item.id] = {
+                id: item.id,
+                name: item.name || 'Неизвестный NPC',
+                status: item.status || 'Обновление',
+                description: item.description || ''
+            };
+            if (item.log) {
+                log(item.log);
+            }
+            changed = true;
+        }
+    });
+    if (changed) {
+        updateNpcPanel();
+        persistState();
+    }
+}
+
 function updateAttempts() {
     if (state.attempts > 0) {
         attemptsText.textContent = `Попыток: ${state.attempts}`;
@@ -495,6 +633,9 @@ terminalForm.addEventListener('submit', (event) => {
     if (execution && execution.note) {
         appendTerminal(execution.note);
     }
+    if (execution?.event || execution?.events) {
+        handleSandboxEvent(execution.events || execution.event);
+    }
     updatePrompt();
 
     state.attempts += 1;
@@ -522,6 +663,22 @@ terminalForm.addEventListener('submit', (event) => {
             setTimeout(renderTask, 600);
         } else {
             appendTerminal(`Уровень «${mission.title}» завершён!`);
+            const firstCompletion = !state.unlockedChapters.has(mission.id);
+            state.unlockedChapters.add(mission.id);
+            if (firstCompletion && mission.story && mission.story.outro) {
+                appendTerminal(mission.story.outro);
+            }
+            if (mission.reward) {
+                const unlockedBefore = state.unlockedRewards.has(mission.reward.id);
+                state.unlockedRewards.add(mission.reward.id);
+                if (!unlockedBefore) {
+                    appendTerminal(`Получена награда: ${mission.reward.title}!`);
+                    log(`Открыт трофей «${mission.reward.title}».`);
+                }
+            }
+            updateStoryPanel();
+            updateRewardsPanel();
+            persistState();
             const nextMissionIndex = missions.findIndex((m, idx) => idx > state.levelIndex && m.tasks.some(t => !t.completed));
             if (nextMissionIndex !== -1) {
                 state.levelIndex = nextMissionIndex;

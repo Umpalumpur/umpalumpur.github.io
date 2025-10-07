@@ -32,7 +32,13 @@
         'Sep 15 10:15:22 app systemd[1]: Started Daily backup job',
         'Sep 15 10:16:05 app nginx[2145]: Warning: worker_connections are low'
     ];
-    const authLog = 'Sep 15 09:58:01 app sshd[980]: Accepted publickey for admin from 10.0.0.5 port 60234 ssh2\n';
+    const threatIp = '185.199.108.133';
+    const authLog = [
+        `Sep 15 09:54:12 app sshd[918]: Failed password for invalid user guest from ${threatIp} port 42310 ssh2`,
+        `Sep 15 09:54:18 app sshd[918]: Failed password for invalid user deploy from ${threatIp} port 42322 ssh2`,
+        'Sep 15 09:58:01 app sshd[980]: Accepted publickey for admin from 10.0.0.5 port 60234 ssh2',
+        `Sep 15 10:02:45 app sshd[1001]: Failed password for admin from ${threatIp} port 42400 ssh2`
+    ].join('\n') + '\n';
     const nginxAccess = '10.0.0.5 - - [15/Sep/2023:10:18:25 +0000] "GET /health HTTP/1.1" 200 42 "-" "curl/7.81.0"\n';
 
     function generateResultsCsv() {
@@ -75,7 +81,9 @@
             services: { nginxRunning: true, nginxEnabled: true },
             ufwRules: new Set(),
             ufwEnabled: false,
-            gitBranch: 'main'
+            gitBranch: 'main',
+            scenario: null,
+            threat: null
         };
     }
 
@@ -289,8 +297,26 @@
         security: applySecurityProgress
     };
 
+    function initializeNpcState(state) {
+        if (state.scenario === 'security') {
+            state.threat = {
+                id: 'specter',
+                name: 'Спектр',
+                ip: threatIp,
+                stage: 'probing',
+                discovered: false,
+                shielded: false,
+                blocked: false,
+                monitored: false
+            };
+        } else {
+            state.threat = null;
+        }
+    }
+
     function buildScenarioState(id) {
         const state = createBaseState();
+        state.scenario = id || 'foundation';
         buildBaseFilesystem(state);
         const index = missionOrder.indexOf(id);
         const limit = index === -1 ? 0 : index;
@@ -301,6 +327,7 @@
                 apply(state);
             }
         }
+        initializeNpcState(state);
         return state;
     }
 
@@ -955,11 +982,45 @@
         };
     }
 
+    function formatUfwRules(state) {
+        if (state.ufwRules.size === 0) {
+            return ['Anywhere                    ALLOW       Anywhere'];
+        }
+        return Array.from(state.ufwRules).map(rule => {
+            const [action = 'ALLOW', target = 'Anywhere'] = rule.split(':');
+            const label = action.toUpperCase();
+            const to = target === 'ssh' ? 'OpenSSH' : target;
+            return `${to.padEnd(27)}${label.padEnd(12)}Anywhere`;
+        });
+    }
+
     function handleUfw(state, args) {
         const sub = args[0];
+        if (sub === 'status') {
+            if (!state.ufwEnabled) {
+                return { output: 'Status: inactive\n' };
+            }
+            const lines = [
+                'Status: active',
+                '',
+                'To                         Action      From',
+                '--                         ------      ----',
+                ...formatUfwRules(state)
+            ];
+            return { output: `${lines.join('\n')}\n` };
+        }
         if (sub === 'allow' && args[1]) {
-            state.ufwRules.add(args[1]);
+            state.ufwRules.add(`ALLOW:${args[1]}`);
             return { output: 'Правило добавлено\nПравило добавлено (v6)\n' };
+        }
+        if (sub === 'deny' && args[1]) {
+            state.ufwRules.add(`DENY:${args[1]}`);
+            return { output: 'Правило deny добавлено\nПравило добавлено (v6)\n' };
+        }
+        if (sub === 'delete' && args[1]) {
+            state.ufwRules.delete(`ALLOW:${args[1]}`);
+            state.ufwRules.delete(`DENY:${args[1]}`);
+            return { output: 'Правило удалено\nПравило удалено (v6)\n' };
         }
         if (sub === 'enable') {
             state.ufwEnabled = true;
@@ -1016,6 +1077,105 @@
         }
         return null;
     }
+
+    function applyNpcEvent(state, raw, command, args) {
+        if (state.scenario !== 'security' || !state.threat) {
+            return null;
+        }
+        const threat = state.threat;
+        if (!threat.discovered && /auth\.log/.test(raw)) {
+            threat.discovered = true;
+            threat.stage = 'detected';
+            return {
+                note: '⚠️ В журнале auth.log всплывает подпись хакера Спектр.\n',
+                event: {
+                    type: 'npc',
+                    id: threat.id,
+                    name: threat.name,
+                    status: 'Замечен в auth.log',
+                    description: `Следы IP ${threat.ip} найдены в /var/log/auth.log — готовьтесь к обороне.`,
+                    log: 'Обнаружен след Спектра в auth.log.'
+                }
+            };
+        }
+        if (!threat.shielded && command === 'ufw' && args[0] === 'enable') {
+            threat.shielded = true;
+            threat.stage = 'shielded';
+            return {
+                note: '🛡️ Файервол активирован — атака замедляется.\n',
+                event: {
+                    type: 'npc',
+                    id: threat.id,
+                    name: threat.name,
+                    status: 'Оборона поднята',
+                    description: 'UFW включён и готов блокировать новые попытки вторжения.',
+                    log: 'Вы включили UFW и ослабили натиск Спектра.'
+                }
+            };
+        }
+        if (command === 'ufw' && args[0] === 'deny' && args[1]) {
+            const target = args[1];
+            if (!threat.blocked && (target === threat.ip || raw.includes(threat.ip))) {
+                threat.blocked = true;
+                threat.stage = 'blocked';
+                return {
+                    note: '🚫 Адрес Спектра заблокирован правилами UFW.\n',
+                    event: {
+                        type: 'npc',
+                        id: threat.id,
+                        name: threat.name,
+                        status: 'Канал атаки перекрыт',
+                        description: `Правило deny для ${threat.ip} вступило в силу — проникновение остановлено.`,
+                        log: 'Спектр потерял доступ: IP заблокирован.'
+                    }
+                };
+            }
+        }
+        if (!threat.monitored && command === 'fail2ban-client') {
+            threat.monitored = true;
+            threat.stage = 'monitored';
+            return {
+                note: '📊 Fail2ban подтверждает блокировки подозрительных IP.\n',
+                event: {
+                    type: 'npc',
+                    id: threat.id,
+                    name: threat.name,
+                    status: 'Мониторинг активен',
+                    description: 'Fail2ban контролирует сервис sshd и блокирует повторные попытки.',
+                    log: 'Вы сверили Fail2ban и усилили защиту от Спектра.'
+                }
+            };
+        }
+        return null;
+    }
+
+    function respondWithNpc(state, raw, command, args, payload) {
+        const result = { ...payload };
+        const reaction = applyNpcEvent(state, raw, command, args);
+        if (reaction) {
+            if (reaction.note) {
+                result.note = result.note ? `${result.note}${reaction.note}` : reaction.note;
+            }
+            const reactionEvents = [];
+            if (reaction.event) reactionEvents.push(reaction.event);
+            if (Array.isArray(reaction.events)) reactionEvents.push(...reaction.events);
+            if (reactionEvents.length === 1) {
+                if (result.event) {
+                    result.events = [result.event, reactionEvents[0]];
+                    delete result.event;
+                } else if (result.events) {
+                    result.events.push(reactionEvents[0]);
+                } else {
+                    result.event = reactionEvents[0];
+                }
+            } else if (reactionEvents.length > 1) {
+                const existing = result.events || (result.event ? [result.event] : []);
+                result.events = [...existing, ...reactionEvents];
+                if (result.event) delete result.event;
+            }
+        }
+        return result;
+    }
     function executeCommand(state, raw) {
         const trimmed = (raw || '').trim();
         if (!trimmed) return { output: '' };
@@ -1036,79 +1196,79 @@
         }
         switch (command) {
             case 'whoami':
-                return { output: `${state.user}\n` };
+                return respondWithNpc(state, trimmed, command, args, { output: `${state.user}\n` });
             case 'pwd':
-                return { output: `${state.cwd}\n` };
+                return respondWithNpc(state, trimmed, command, args, { output: `${state.cwd}\n` });
             case 'ls':
-                return handleLs(state, args);
+                return respondWithNpc(state, trimmed, command, args, handleLs(state, args));
             case 'cd':
-                return handleCd(state, args);
+                return respondWithNpc(state, trimmed, command, args, handleCd(state, args));
             case 'mkdir':
-                return handleMkdir(state, args);
+                return respondWithNpc(state, trimmed, command, args, handleMkdir(state, args));
             case 'touch':
-                return handleTouch(state, args);
+                return respondWithNpc(state, trimmed, command, args, handleTouch(state, args));
             case 'echo':
-                return handleEcho(state, tokens);
+                return respondWithNpc(state, trimmed, command, args, handleEcho(state, tokens));
             case 'cat':
-                return handleCat(state, args);
+                return respondWithNpc(state, trimmed, command, args, handleCat(state, args));
             case 'man':
-                return handleMan(args);
+                return respondWithNpc(state, trimmed, command, args, handleMan(args));
             case 'cp':
-                return handleCp(state, args);
+                return respondWithNpc(state, trimmed, command, args, handleCp(state, args));
             case 'mv':
-                return handleMv(state, args);
+                return respondWithNpc(state, trimmed, command, args, handleMv(state, args));
             case 'rm':
-                return handleRm(state, args);
+                return respondWithNpc(state, trimmed, command, args, handleRm(state, args));
             case 'head':
-                return handleHead(state, args);
+                return respondWithNpc(state, trimmed, command, args, handleHead(state, args));
             case 'tail':
-                return handleTail(state, args);
+                return respondWithNpc(state, trimmed, command, args, handleTail(state, args));
             case 'grep':
-                return handleGrep(state, args);
+                return respondWithNpc(state, trimmed, command, args, handleGrep(state, args));
             case 'find':
-                return handleFind(state, args);
+                return respondWithNpc(state, trimmed, command, args, handleFind(state, args));
             case 'wc':
-                return handleWc(state, args);
+                return respondWithNpc(state, trimmed, command, args, handleWc(state, args));
             case 'du':
-                return handleDu(state, args);
+                return respondWithNpc(state, trimmed, command, args, handleDu(state, args));
             case 'df':
-                return handleDf();
+                return respondWithNpc(state, trimmed, command, args, handleDf());
             case 'sort':
-                return handleSort(state, args);
+                return respondWithNpc(state, trimmed, command, args, handleSort(state, args));
             case 'cut':
-                return handleCut(state, args);
+                return respondWithNpc(state, trimmed, command, args, handleCut(state, args));
             case 'tar':
-                return handleTar(state, args);
+                return respondWithNpc(state, trimmed, command, args, handleTar(state, args));
             case 'ps':
-                return handlePs(state, args);
+                return respondWithNpc(state, trimmed, command, args, handlePs(state, args));
             case 'systemctl':
-                return handleSystemctl(state, args);
+                return respondWithNpc(state, trimmed, command, args, handleSystemctl(state, args));
             case 'journalctl':
-                return handleJournalctl(state, args);
+                return respondWithNpc(state, trimmed, command, args, handleJournalctl(state, args));
             case 'apt':
-                return handleApt(state, args);
+                return respondWithNpc(state, trimmed, command, args, handleApt(state, args));
             case 'git':
-                return handleGit(state, args);
+                return respondWithNpc(state, trimmed, command, args, handleGit(state, args));
             case 'docker':
-                return handleDocker(state, args);
+                return respondWithNpc(state, trimmed, command, args, handleDocker(state, args));
             case 'ansible-playbook':
-                return handleAnsible(state, args);
+                return respondWithNpc(state, trimmed, command, args, handleAnsible(state, args));
             case 'ssh':
-                return handleSsh(args);
+                return respondWithNpc(state, trimmed, command, args, handleSsh(args));
             case 'scp':
-                return handleScp(args);
+                return respondWithNpc(state, trimmed, command, args, handleScp(args));
             case 'ufw':
-                return handleUfw(state, args);
+                return respondWithNpc(state, trimmed, command, args, handleUfw(state, args));
             case 'fail2ban-client':
-                return handleFail2ban();
+                return respondWithNpc(state, trimmed, command, args, handleFail2ban());
             case 'chmod':
-                return handleChmod(state, args);
+                return respondWithNpc(state, trimmed, command, args, handleChmod(state, args));
             case 'ssh-keygen':
-                return handleSshKeygen(state, args);
+                return respondWithNpc(state, trimmed, command, args, handleSshKeygen(state, args));
             case 'chown':
-                return handleChown(state, args);
+                return respondWithNpc(state, trimmed, command, args, handleChown(state, args));
             default:
-                return { output: `bash: ${command}: command not found\n`, error: true };
+                return respondWithNpc(state, trimmed, command, args, { output: `bash: ${command}: command not found\n`, error: true });
         }
     }
 

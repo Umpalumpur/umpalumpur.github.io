@@ -46,8 +46,8 @@
             <button type="submit">Запустить</button>
         </form>
         <div class="terminal-actions">
-            <button type="button" id="hint-btn" class="pill-button accent">Подсказка</button>
-            <button type="button" id="skip-btn" class="pill-button ghost">Пропустить</button>
+            <button type="button" id="hint-btn" class="pill-button pill-button--accent">Подсказка</button>
+            <button type="button" id="skip-btn" class="pill-button pill-button--outline">Пропустить</button>
             <span id="attempts" class="attempts"></span>
         </div>
     </section>
@@ -56,6 +56,11 @@
             <strong>Общий прогресс кампании</strong>
             <div class="progress-bar"><span id="overall-progress-bar"></span></div>
             <p id="overall-progress-text" class="muted"></p>
+        </div>
+        <div class="story-panel">
+            <h2 id="story-chapter-title">История кампании</h2>
+            <p id="story-chapter-text" class="muted"></p>
+            <p id="story-beat-text" class="story-beat"></p>
         </div>
         <div class="progress">
             <strong id="progress-label">Прогресс уровня</strong>
@@ -67,6 +72,14 @@
             <div class="chips" id="skills"></div>
             <h2>Цели обучения</h2>
             <ul id="objectives" class="objectives"></ul>
+        </div>
+        <div class="rewards-panel">
+            <h2>Награды</h2>
+            <ul class="rewards-list" id="reward-list"></ul>
+        </div>
+        <div class="npc-panel">
+            <h2>Обстановка Ubuntu</h2>
+            <div id="npc-status" class="npc-status muted"></div>
         </div>
         <div>
             <h2>Материалы и ссылки</h2>
